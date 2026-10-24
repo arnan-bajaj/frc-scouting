@@ -984,11 +984,12 @@ function buildSteps(sel, labels, key) {
 
 $('#afNote').oninput = () => { entry.payload.note = $('#afNote').value; autosave(1200); };
 $('#btnAfMore').onclick = () => { afterPage = afterPage === 1 ? 2 : 1; buzz(); renderAfter(); };
-$('#btnSend').onclick = async () => {
+async function sendMatch({ changeStation = false } = {}) {
   if (!entry || !entry.team) return;
   entry.payload.note = $('#afNote').value;
   if (PRACTICE) {
     buzz(30);
+    if (changeStation) { show('seat'); renderSeat(); return; }
     loadMatch(practiceMatch());
     clock.reset();
     show('live'); renderLive();
@@ -999,8 +1000,14 @@ $('#btnSend').onclick = async () => {
   buzz(30);
   await refreshHistory();
   loadMatch(nextMatch() || pickCurrentMatch());
+  if (changeStation) { show('seat'); renderSeat(); return; }
   goStandbyOrLive();
-};
+}
+$('#btnSend').onclick = () => sendMatch();
+$('#btnSendSwitch').onclick = () => sendMatch({ changeStation: true });
+// Between matches. The chair this phone holds stays selected and claimed until
+// SIT is pressed on a different one, so backing out costs nothing.
+$('#sbSwitch').onclick = () => { buzz(); show('seat'); renderSeat(); };
 
 // ═══════════════════════════════════════════════════════════ STANDBY/OFFLINE
 async function refreshHistory() {
@@ -1513,6 +1520,8 @@ async function main() {
     // the shared origin, so the guard below did not catch it - and the scout
     // who had just been bumped was logging the same robot again.
     if (screen === 'bumped') { paintBumpWait(); return; }
+    // Mid-way through picking a new chair: the match belongs to the old one.
+    if (screen === 'seat') return;
     if (!currentMatch || rec.matchKey !== currentMatch.matchKey) return;
     if (clock.startedAtServer != null) return;
     clock.adopt(rec);
