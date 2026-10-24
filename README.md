@@ -624,7 +624,7 @@ they have got it.
 ## Pit scouting
 
 Pit scouting is done on your team's mirror site (for example
-`scouting.systemoverload.org`), not on the hub — students open it on their own phones, enter
+`mirror.systemoverload.org`), not on the hub — students open it on their own phones, enter
 the team passcode and tap **Pit scouting**. They get the venue's pit map from Nexus, a form per
 robot, and a blue *AK is on it* marker so two of them never walk to the same pit. The hub
 collects everything once a minute, and it shows on the dashboard. Answers are kept on the phone

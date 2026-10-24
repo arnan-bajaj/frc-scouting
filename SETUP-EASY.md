@@ -237,7 +237,7 @@ sudo systemctl enable --now frc-mirror
 ### ☐ 4. Point a domain at it and turn on HTTPS
 
 1. At your domain provider (Wix: **Domains → ⋯ → Manage DNS Records**), add an **A record**:
-   host `scouting`, value = the server's public IP. Leave the other records alone.
+   host `mirror`, value = the server's public IP. Leave the other records alone.
 2. Copy the Caddy config, change the hostname inside it to yours, and reload:
 
 ```
@@ -245,13 +245,13 @@ sudo cp /opt/frc-scouting/mirror/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-After DNS updates (minutes to an hour), `https://scouting.yourdomain` should show a passcode
+After DNS updates (minutes to an hour), `https://mirror.yourdomain` should show a passcode
 prompt. Caddy handles the certificate.
 
 ### ☐ 5. Connect the hub to it *(hub laptop)*
 
 In the admin panel, open **OFF-SITE MIRROR**. Enter the mirror address
-(`https://scouting.yourdomain`) and the push key. Press **SAVE & REFRESH**, **TEST KEYS**, then
+(`https://mirror.yourdomain`) and the push key. Press **SAVE & REFRESH**, **TEST KEYS**, then
 **PUSH NOW**. After that it updates by itself about once a minute.
 
 ### ☐ 6. Give the team the view passcode
@@ -270,5 +270,5 @@ event.
 | Admin panel won't open on a phone | That's intentional. Keys are set on the hub laptop only. |
 | FIND MY EVENTS shows nothing | The laptop has no internet, or the schedule isn't out yet. Type the event key by hand. |
 | Panel stays locked and mentions `.env` | Run `--set-admin-password` again. |
-| Mirror shows 404 or the team website | Use the `scouting.` subdomain, not the main domain. |
+| Mirror shows 404 or the team website | Use the `mirror.` subdomain, not the main domain. |
 | Mirror rejected the push key | The key in the panel doesn't match the one on the server. Check them on both sides. |

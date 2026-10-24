@@ -413,15 +413,15 @@ told that one subdomain lives somewhere else. Nothing about the Wix site changes
 
 1. On the host, `curl -4 ifconfig.me` — that is the address to point at.
 2. Wix → **Domains** → the domain → **⋯** → **Manage DNS Records**.
-3. Under **A (Host)**, **+ Add Record**: Host name `scouting`, Value the address from step 1,
+3. Under **A (Host)**, **+ Add Record**: Host name `mirror`, Value the address from step 1,
    TTL 1 hour. **Save**. Leave the existing records alone — those are the Wix site.
 4. If the page has a **CAA** section with anything in it, add `0 issue "letsencrypt.org"`,
    or Caddy is refused a certificate.
-5. Wait — usually minutes, occasionally an hour. `nslookup scouting.systemoverload.org` on
+5. Wait — usually minutes, occasionally an hour. `nslookup mirror.systemoverload.org` on
    any laptop prints the host's address when it has arrived. Caddy retries by itself until it
    does; there is nothing to restart.
 
-The address is then `https://scouting.systemoverload.org`, which is the hostname the
+The address is then `https://mirror.systemoverload.org`, which is the hostname the
 Caddyfile already has. Not the bare `systemoverload.org` — that is the Wix site, and a push to
 it comes back 404.
 
@@ -454,7 +454,8 @@ overwrite the event.
 ## Part C — the hub itself in the cloud
 
 Optional, instead of the laptop. The hub runs on the same host as the mirror, so nothing at the
-venue has to stay switched on. The cost: **every scout's phone needs mobile data**. Phones keep
+venue has to stay switched on. The team uses the hub at `https://scouting.systemoverload.org`,
+and the mirror moves to `mirror.systemoverload.org`. The cost: **every scout's phone needs mobile data**. Phones keep
 recording with no signal and send everything when it comes back, but the live numbers wait for it.
 
 On the internet there is no venue wifi acting as the fence, so cloud mode adds one:

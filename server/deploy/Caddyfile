@@ -2,11 +2,11 @@
 # mirror's, then `sudo caddy validate --config /etc/caddy/Caddyfile` and
 # `sudo systemctl reload caddy`.
 #
-# The sslip.io name resolves to the IP written inside it, so the hub is
-# reachable the moment this is loaded; the systemoverload.org one starts
-# working once Wix has an A record for `hub` pointing at this machine.
+# The hub is the address the team uses - scouting, the dashboard, the admin
+# panel - so it gets the short name. The mirror (pit scouting and the
+# read-only copy) lives on mirror.systemoverload.org; see mirror/deploy.
 
-hub.systemoverload.org, hub.141-148-162-105.sslip.io {
+scouting.systemoverload.org {
 	encode gzip
 
 	header {

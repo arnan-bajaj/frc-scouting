@@ -5,10 +5,14 @@
 # itself listens on 127.0.0.1 only and speaks plain HTTP, so this file is the
 # only thing on the public interface.
 #
+# The sslip.io name resolves to the IP written inside it, so it works before
+# any DNS record exists; mirror.systemoverload.org needs an A record for
+# `mirror` at Wix. scouting.systemoverload.org is the cloud hub (server/deploy).
+#
 #   sudo cp mirror/deploy/Caddyfile /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
 
-scouting.systemoverload.org {
+mirror.systemoverload.org, mirror.141-148-162-105.sslip.io {
 	encode gzip
 
 	# The mirror sets its own Content-Security-Policy, X-Content-Type-Options
