@@ -23,6 +23,8 @@ WorkingDirectory=/opt/frc-scouting
 # what stops everything it forwards from counting as "the hub machine".
 ExecStart=/usr/bin/python3 /opt/frc-scouting/server/hub.py --bind 127.0.0.1 --behind-proxy --allow-remote-config --no-mdns --no-browser --db /var/lib/frc-hub/scouting.db
 Environment=HUB_ENV_FILE=/var/lib/frc-hub/.env
+# So the banner and warnings reach `journalctl -u frc-hub` as they happen.
+Environment=PYTHONUNBUFFERED=1
 
 # systemctl edit frc-hub, then:
 #   [Service]
