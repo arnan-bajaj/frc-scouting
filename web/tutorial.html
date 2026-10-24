@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Practice · REBUILT Scouting</title>
+<link rel="manifest" href="/tutorial.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" href="/icons/icon-192.png">
 <script src="/js/theme.js"></script>
@@ -18,6 +19,7 @@
      real screens rather than replacing them, so what a scout practises on is
      the thing they will use, down to the colours. */
   html, body { overflow: auto; }
+  .hide { display: none !important; }
   body.landscape-only { display: block; }
   .tut { min-height: 100%; display: flex; flex-direction: column; }
   .tbar { display: flex; align-items: center; gap: 10px; padding: 8px 14px;
@@ -123,6 +125,28 @@
 </style>
 </head>
 <body class="landscape-only">
+
+<!-- Add to Home Screen, iPhone only - the same offer the scouting screen
+     makes, so practice is one tap away and runs without Safari's bars. -->
+<div class="a2hs hide" id="a2hs">
+  <div class="a2hscard">
+    <div class="col" style="gap:8px;min-width:0">
+      <div class="eyebrow">Practise any time</div>
+      <h2>Put Practice on your home screen.</h2>
+      <ol class="a2hssteps">
+        <li>Tap <b>Share</b> — the square with an arrow coming out of the top.</li>
+        <li>Scroll down the list and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>, then open <b>Practice</b> from the new icon.</li>
+      </ol>
+    </div>
+    <div class="col" style="gap:10px;min-width:0">
+      <div class="amberbox">It opens full screen, sideways, just like the real scouting screen.
+        If it asks for the <b>team passcode</b>, type it again — iPhone keeps the
+        home-screen icon separate from Safari.</div>
+      <div class="obtn ghost" id="a2hsSkip">Not now, practise in Safari</div>
+    </div>
+  </div>
+</div>
 
 <div class="tut">
   <div class="tbar">
@@ -780,6 +804,12 @@ $('#tBack').onclick = () => go(step - 1);
 $('#tSkip').onclick = () => { location.href = '/scout'; };
 go(0);
 })();
+</script>
+<script type="module">
+  // The scouting screen's offer, with its own "not now" so skipping one does
+  // not silence the other.
+  import { offerHomeScreen } from '/js/fullscreen.js';
+  offerHomeScreen({ el: document.getElementById('a2hs'), skipKey: 'a2hsTutorialSkipped' });
 </script>
 </body>
 </html>

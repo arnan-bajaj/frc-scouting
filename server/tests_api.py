@@ -2969,6 +2969,9 @@ def test_cloud_mode_is_behind_the_team_passcode(L):
                     code == 200 and "/api/team/unlock" in body, f"({code})")
         code, _, _ = get("/css/theme.css", fwd)
         ok &= check("what that page is drawn with is not gated", code == 200, f"({code})")
+        code, _, body = get("/tutorial.webmanifest", fwd)
+        ok &= check("nor are the manifests, which browsers fetch without cookies",
+                    code == 200 and '"start_url": "/tutorial"' in body, f"({code})")
         code, _ = L.req("/api/sync", {"scout": [entry(f"{EK}_qm1", 101, "ZZ", 1)]},
                         headers=fwd)
         ok &= check("and nobody outside can write a scouting row", code == 401, f"({code})")

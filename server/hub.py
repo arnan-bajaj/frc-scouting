@@ -2876,7 +2876,9 @@ class Handler(BaseHTTPRequestHandler):
     TEAM_WINDOW = 600            # ...per ten minutes
     #: What the passcode page itself is drawn with, plus Nexus, which carries
     #: its own token.
-    TEAM_OPEN = ("/api/team/unlock", "/api/nexus/webhook", "/manifest.webmanifest")
+    #: Manifests too: a browser fetches them without cookies.
+    TEAM_OPEN = ("/api/team/unlock", "/api/nexus/webhook", "/manifest.webmanifest",
+                 "/tutorial.webmanifest")
     TEAM_OPEN_DIRS = ("/css/", "/js/", "/fonts/", "/icons/")
 
     def _cookie(self, name):
