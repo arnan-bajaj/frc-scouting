@@ -989,7 +989,6 @@ async function sendMatch({ changeStation = false } = {}) {
   entry.payload.note = $('#afNote').value;
   if (PRACTICE) {
     buzz(30);
-    if (changeStation) { show('seat'); renderSeat(); return; }
     loadMatch(practiceMatch());
     clock.reset();
     show('live'); renderLive();
@@ -1003,8 +1002,15 @@ async function sendMatch({ changeStation = false } = {}) {
   if (changeStation) { show('seat'); renderSeat(); return; }
   goStandbyOrLive();
 }
-$('#btnSend').onclick = () => sendMatch();
-$('#btnSendSwitch').onclick = () => sendMatch({ changeStation: true });
+// Every match ends on the station picker, so swapping chairs between matches
+// is one tap. Staying put is SIT - and a scout who forgets is still caught by
+// the next match arming, see onHeldSeat.
+$('#btnSend').onclick = () => sendMatch({ changeStation: !PRACTICE });
+/** The picker still shows the chair this phone holds: nothing has been changed. */
+function onHeldSeat() {
+  return seat.alliance === (localStorage.getItem('alliance') || '')
+    && seat.station === Number(localStorage.getItem('station') || 0);
+}
 // Between matches. The chair this phone holds stays selected and claimed until
 // SIT is pressed on a different one, so backing out costs nothing.
 $('#sbSwitch').onclick = () => { buzz(); show('seat'); renderSeat(); };
@@ -1295,7 +1301,10 @@ let armedMatch = null;
  * played, and the scout sat on standby watching it.
  */
 function armIfOnField(m) {
-  if (screen !== 'standby' || !m || m.status !== 'On field') return false;
+  // The picker counts as standby until a different chair is chosen: every
+  // match now ends there, and a scout keeping their station may never press SIT.
+  const waiting = screen === 'standby' || (screen === 'seat' && onHeldSeat());
+  if (!waiting || !m || m.status !== 'On field') return false;
   // Official results exist, so it is over whatever the queueing status says.
   if (m.breakdown) return false;
   if (armedMatch === m.matchKey) return false;
@@ -1521,7 +1530,7 @@ async function main() {
     // who had just been bumped was logging the same robot again.
     if (screen === 'bumped') { paintBumpWait(); return; }
     // Mid-way through picking a new chair: the match belongs to the old one.
-    if (screen === 'seat') return;
+    if (screen === 'seat' && !onHeldSeat()) return;
     if (!currentMatch || rec.matchKey !== currentMatch.matchKey) return;
     if (clock.startedAtServer != null) return;
     clock.adopt(rec);
