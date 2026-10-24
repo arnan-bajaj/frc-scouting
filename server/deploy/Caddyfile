@@ -4,7 +4,8 @@
 #
 # The hub is the address the team uses - scouting, the dashboard, the admin
 # panel - so it gets the short name. The mirror (pit scouting and the
-# read-only copy) lives on mirror.systemoverload.org; see mirror/deploy.
+# read-only copy) is under /pit/ on the same name, so the team has one
+# address; it also keeps a name of its own (mirror/deploy) for the hub's push.
 
 scouting.systemoverload.org {
 	encode gzip
@@ -19,9 +20,18 @@ scouting.systemoverload.org {
 		max_size 64MB
 	}
 
+	# The mirror, prefix stripped: it sees /pit/api/status as /api/status,
+	# and its pages resolve every path against the folder they were loaded from.
+	redir /pit /pit/ 308
+	handle_path /pit/* {
+		reverse_proxy 127.0.0.1:8060
+	}
+
 	# flush_interval -1: /api/stream is server-sent events, and the match
 	# clock on six phones rides on it arriving now, not when a buffer fills.
-	reverse_proxy 127.0.0.1:6059 {
-		flush_interval -1
+	handle {
+		reverse_proxy 127.0.0.1:6059 {
+			flush_interval -1
+		}
 	}
 }

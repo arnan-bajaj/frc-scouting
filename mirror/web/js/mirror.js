@@ -29,8 +29,15 @@ const state = {
 
 // ---------------------------------------------------------------- plumbing
 
+// Where this page lives, not the site root: the mirror can be served from a
+// folder of another site (scouting.systemoverload.org/pit/ beside the cloud
+// hub) as well as from a domain of its own. Every path below is resolved
+// against this, so '/api/status' means "this mirror's", wherever that is.
+const BASE = new URL('.', location.href);
+const here = (path) => new URL(String(path).replace(/^\//, ''), BASE);
+
 async function api(path, opts = {}) {
-  const url = new URL(path, location.origin);
+  const url = here(path);
   const res = await fetch(url, {
     ...opts,
     headers: {
@@ -47,7 +54,7 @@ async function api(path, opts = {}) {
 /** A URL a browser fetches by itself - an <img>, a download - cannot send a
  *  header, so those carry the token in the query string instead. */
 function signed(path) {
-  const u = new URL(path, location.origin);
+  const u = here(path);
   if (state.token) u.searchParams.set('t', state.token);
   return u.toString();
 }
@@ -83,7 +90,7 @@ function showLock(msg) {
   // Why the site is not answering matters: a wrong passcode and a hub that
   // stopped pushing three hours ago are different problems, and only one of
   // them is the person at the keyboard's fault.
-  fetch('/api/status').then((r) => r.json()).then((s) => {
+  fetch(here('/api/status')).then((r) => r.json()).then((s) => {
     if (s.serverTime) state.serverSkew = s.serverTime - Date.now() / 1000;
     $('#lockStatus').textContent = s.lastReceivedAt
       ? `Last heard from the hub ${ago(s.lastReceivedAt)}.`
@@ -96,7 +103,7 @@ async function unlock() {
   btn.disabled = true;
   $('#lockErr').textContent = '';
   try {
-    const res = await fetch('/api/unlock', {
+    const res = await fetch(here('/api/unlock'), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: $('#pin').value }),
     });

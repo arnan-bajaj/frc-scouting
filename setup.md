@@ -455,7 +455,8 @@ overwrite the event.
 
 Optional, instead of the laptop. The hub runs on the same host as the mirror, so nothing at the
 venue has to stay switched on. The team uses the hub at `https://scouting.systemoverload.org`,
-and the mirror moves to `mirror.systemoverload.org`. The cost: **every scout's phone needs mobile data**. Phones keep
+pit scouting at `https://scouting.systemoverload.org/pit/`, and the hub pushes to the mirror
+on a name of its own. The cost: **every scout's phone needs mobile data**. Phones keep
 recording with no signal and send everything when it comes back, but the live numbers wait for it.
 
 On the internet there is no venue wifi acting as the fence, so cloud mode adds one:
