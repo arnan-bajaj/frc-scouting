@@ -30,7 +30,9 @@ This project reads from, and is grateful to:
   scouting and dashboard surfaces do so in their footer.
 - **[The Blue Alliance](https://www.thebluealliance.com)** — official match results, per-window
   fuel counts, per-robot climb.
-- **[Statbotics](https://statbotics.io)** — EPA, shown alongside our own numbers.
+- **[Statbotics](https://statbotics.io)** — EPA, shown alongside our own numbers. Read through
+  [Popcorn Penguins' mirror](https://statbotics.popcornpenguins.com), which stays up during the
+  season, with statbotics.io as the fallback.
 - **[Lovat](https://lovat.app)**, by FRC 8033 Highlander Robotics — other teams' scout reports
   for the same event, read with the team's own API key and shown in a block of its own. The
   endpoints used are documented by its open-source backend,

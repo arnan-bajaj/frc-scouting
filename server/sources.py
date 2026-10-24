@@ -17,7 +17,11 @@ import urllib.parse
 import urllib.request
 
 TBA_BASE = "https://www.thebluealliance.com/api/v3"
-STATBOTICS_BASE = "https://api.statbotics.io/v3"
+# Popcorn Penguins' mirror first: the official API only answers in the
+# offseason, and 500s on every route while events are running.  Same /v3
+# routes, same JSON.  The official one stays as the fallback.
+STATBOTICS_BASES = ("https://api-statbotics.popcornpenguins.com/v3",
+                    "https://api.statbotics.io/v3")
 NEXUS_BASE = "https://frc.nexus/api/v1"
 FRC_EVENTS_BASE = "https://frc-api.firstinspires.org/v3.0"
 LOVAT_BASE = "https://api.lovat.app/v1"
@@ -335,11 +339,13 @@ class Statbotics:
     def _get(self, path):
         if time.time() < self.down_until:
             return None
-        body, status = _request(STATBOTICS_BASE + path, timeout=8)
-        if body is None:
-            # back off for a while rather than hammering a service that is 500ing
-            self.down_until = time.time() + 300
-        return body
+        for base in STATBOTICS_BASES:
+            body, status = _request(base + path, timeout=8)
+            if body is not None:
+                return body
+        # back off for a while rather than hammering a service that is 500ing
+        self.down_until = time.time() + 300
+        return None
 
     def team_year(self, team, year=2026):
         return self._get(f"/team_year/{team}/{year}")
