@@ -1395,6 +1395,25 @@ class Hub:
             self.broadcast("matchStart", rec)
         return rec
 
+    def cancel_match(self, match_key, scout_id):
+        """Take back a false start: the pad was tapped before the match began.
+
+        Left alone, the wrong origin is shared with every scout on the match
+        and kept for the real one (first tap wins), and once it is more than
+        CLOCK_FIX_LIMIT off, TBA's actual time cannot rescue it either.
+        """
+        def apply(clocks):
+            clocks = dict(clocks or {})
+            if match_key not in clocks:
+                return None, False
+            del clocks[match_key]
+            return clocks, True
+        if self.store.mutate("matchClocks", apply, {}):
+            self.note("warn", f"match clock cancelled for {match_key} by {scout_id}")
+            self.broadcast("matchCancel", {"matchKey": match_key, "by": scout_id})
+            return True
+        return False
+
     def match_clock(self, match_key):
         return (self.store.get("matchClocks") or {}).get(match_key)
 
@@ -3439,6 +3458,14 @@ class Handler(BaseHTTPRequestHandler):
             sid = body.get("scoutId")
             rec = h.start_match(mk.strip(), (str(sid).strip()[:4].upper() if sid else "") or "?")
             return self._json({"ok": True, "clock": rec, "serverTime": time.time()})
+
+        if p == "/api/matchcancel":
+            mk = body.get("matchKey")
+            if not isinstance(mk, str) or not mk.strip() or len(mk) > 120:
+                return self._json({"error": "matchKey required"}, 400)
+            sid = body.get("scoutId")
+            gone = h.cancel_match(mk.strip(), (str(sid).strip()[:4].upper() if sid else "") or "?")
+            return self._json({"ok": True, "cancelled": gone})
 
         if p in ("/api/admin/unlock", "/api/admin/lock"):
             # The settings boundary, first: an admin code is not a way to

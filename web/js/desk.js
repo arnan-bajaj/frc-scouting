@@ -2083,7 +2083,7 @@ async function main() {
   // of each other - and each one used to be its own full refresh.
   const nudge = coalesce(refresh, 750);
   for (const t of ['nexus', 'alliances', 'results', 'scout', 'calibration', 'matchStatus',
-                   'seats', 'matchStart', 'lovat', 'solved', 'rankings', 'epa', 'earlyScores'])
+                   'seats', 'matchStart', 'matchCancel', 'lovat', 'solved', 'rankings', 'epa', 'earlyScores'])
     net.on(t, nudge);
   // Settings are not in refresh() any more: /api/config carries serverTime, so
   // it can never answer 304, and nothing on it changes without one of these.

@@ -758,8 +758,54 @@ function renderLive() {
     else { st.textContent = `${now.label} · ${left}s left`; st.className = 'shotstate unknown'; }
   }
   if (!padHeld) paintHold();
+  // Only while there is a start to take back.
+  $('#btnCancelStart').classList.toggle('hide', !(clock.running && now));
   renderLadder();
 }
+
+/**
+ * Put the match back to "not started" on this phone: the clock, and every run
+ * logged against it, which were timed from the wrong origin and mean nothing.
+ * The pre-match answers from standby stay.
+ */
+function unstartMatch() {
+  clock.reset();
+  pending = null;
+  if (entry) {
+    Object.assign(entry.payload, { intervals: [], feedIntervals: [], defenseIntervals: [],
+                                   clockShared: false, clockBy: null });
+    autosave();
+  }
+  if (currentMatch) delete MATCH_CLOCKS[currentMatch.matchKey];
+  disarmCancel();
+  renderLive();
+}
+
+// Two taps, so a thumb landing on it mid-match does not wipe the match. A
+// confirm() dialog would throw the phone out of fullscreen.
+let cancelArmed = null;
+function disarmCancel() {
+  clearTimeout(cancelArmed); cancelArmed = null;
+  const b = $('#btnCancelStart');
+  b.textContent = '✕'; b.classList.remove('on');
+}
+$('#btnCancelStart').onclick = () => {
+  if (!cancelArmed) {
+    buzz(20);
+    const b = $('#btnCancelStart');
+    b.textContent = 'Tap again: false start'; b.classList.add('on');
+    cancelArmed = setTimeout(disarmCancel, 3000);
+    return;
+  }
+  const mk = currentMatch && currentMatch.matchKey;
+  buzz(40);
+  unstartMatch();
+  if (mk && !PRACTICE) {
+    net.api('/api/matchcancel', { method: 'POST', body: JSON.stringify({
+      matchKey: mk, scoutId: seat.scout,
+    }) }).catch(() => { /* offline: the hub keeps its copy until someone retries */ });
+  }
+};
 
 /** Connection words in the live header: silent while all is well. */
 function paintLink() {
@@ -1472,6 +1518,13 @@ async function main() {
     clock.adopt(rec);
     if (screen !== 'live' && entry && entry.team) { show('live'); }
     renderLive();
+  });
+  // another scout took back a false start: this phone was on that clock too
+  net.on('matchCancel', (rec) => {
+    if (!rec || !rec.matchKey) return;
+    delete MATCH_CLOCKS[rec.matchKey];
+    if (!currentMatch || rec.matchKey !== currentMatch.matchKey) return;
+    if (screen === 'live' && clock.running) unstartMatch();
   });
   net.on('matchStatus', ({ match }) => {
     if (!match || !match.label) return;

@@ -948,6 +948,18 @@ def test_match_clock(L):
 
     code, r = L.req("/api/matchstart", {})
     ok &= check("a matchstart with no match is a 400", code == 400)
+
+    code, r = L.req("/api/matchcancel", {"matchKey": f"{EK}_qm1", "scoutId": "BR"})
+    ok &= check("a false start can be taken back",
+                code == 200 and r["cancelled"] and L.hub.match_clock(f"{EK}_qm1") is None)
+    _, r = L.req("/api/matchcancel", {"matchKey": f"{EK}_qm1", "scoutId": "BR"})
+    ok &= check("cancelling a match that is not running is harmless", r["cancelled"] is False)
+    time.sleep(0.05)
+    _, r = L.req("/api/matchstart", {"matchKey": f"{EK}_qm1", "scoutId": "CJ"})
+    ok &= check("and the next tap starts it afresh",
+                r["clock"]["by"] == "CJ" and r["clock"]["startedAt"] > first)
+    code, _ = L.req("/api/matchcancel", {})
+    ok &= check("a matchcancel with no match is a 400", code == 400)
     return ok
 
 
