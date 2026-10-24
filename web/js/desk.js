@@ -1492,7 +1492,7 @@ function renderTeamDetail() {
     <div class="kv"><span>drivetrain</span><b>${esc(p.drivetrain || '—')}</b></div>
     <div class="kv"><span>shooter</span><b>${esc(p.shooter || '—')}</b></div>
     <div class="kv"><span>claims climb</span><b>${esc(p.maxClimb || '—')}</b></div>
-    <div class="kv"><span>can stockpile</span><b>${esc(p.stockpile || '—')}</b></div>
+    <div class="kv"><span>can pass</span><b>${esc(p.canPass || '—')}</b></div>
     <div class="kv"><span>ground pickup</span><b>${esc(p.groundPickup || '—')}</b></div>
     <div class="kv"><span>weight</span><b>${esc(p.weight || '—')}</b></div>
     ${pitCustomRows(p)}

@@ -416,7 +416,7 @@ def test_pit_scouting_on_the_mirror(H, M, tok, questions):
 
     save = {"eventKey": EK, "team": team, "deviceId": "phoneA", "scoutId": "AK",
             "payload": {"drivetrain": "swerve", "shooter": "drum", "maxClimb": "L2",
-                        "stockpile": "yes", "notes": "very tidy pit",
+                        "canPass": "yes", "notes": "very tidy pit",
                         "custom": {questions[0]["id"]: "blue", questions[1]["id"]: 4},
                         "photos": ["data:image/png;base64," + PNG, "data:text/html;base64,PHNjcmlwdD4="]}}
     code, _, _ = M.req("/api/pit/save", save)

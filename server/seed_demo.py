@@ -442,9 +442,9 @@ def main():
         st.upsert_pit({"eventKey": ek, "team": n, "scoutId": "PIT", "deviceId": "seed",
                        "updatedAt": time.time(), "payload": {
                            "drivetrain": rng.choice(["swerve", "tank", "mecanum"]),
-                           "shooter": rng.choice(["drum", "flywheel", "dump"]),
+                           "shooter": rng.choice(["drum", "turret", "static"]),
                            "maxClimb": rng.choice(["L3", "L2", "L1", "none"]),
-                           "stockpile": rng.choice(["yes", "some", "no"]),
+                           "canPass": rng.choice(["yes", "no"]),
                            "groundPickup": rng.choice(["yes", "no"]),
                            "autos": "2 — centre 8 fuel, wall 5",
                            "weight": str(rng.randint(95, 125)),

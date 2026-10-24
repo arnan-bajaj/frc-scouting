@@ -247,9 +247,9 @@ The form per robot:
 | Field | Options |
 |---|---|
 | Drivetrain | swerve / tank / mecanum / other |
-| Shooter | drum / flywheel / dump / none |
+| Shooter | drum / turret / static / other / none |
 | Max climb | L3 / L2 / L1 / none |
-| Can stockpile | yes / some / no |
+| Can pass | yes / no |
 | Ground pickup | yes / no |
 | **Our questions** | whatever the team has added — see below |
 | Autos | free text |

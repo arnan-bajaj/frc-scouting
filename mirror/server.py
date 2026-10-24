@@ -101,7 +101,7 @@ PIT_PHOTO_BYTES = 4 * 1024 * 1024
 PIT_PAYLOAD_BYTES = 64 * 1024
 PHOTO_ID = re.compile(r"^[0-9a-f]{8,40}$")
 #: The built-in pit questions. A robot with four of these answered is done.
-PIT_FIELDS = ("drivetrain", "shooter", "maxClimb", "stockpile", "groundPickup")
+PIT_FIELDS = ("drivetrain", "shooter", "maxClimb", "canPass", "groundPickup")
 
 
 class Mirror:

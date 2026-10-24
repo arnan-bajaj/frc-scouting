@@ -33,13 +33,12 @@ const ek = () => ctx.state.eventKey;
 const bundle = () => ctx.state.bundle || {};
 
 // The built-in questions. Four of the first five answered is "done".
-const FIELDS = ['drivetrain', 'shooter', 'maxClimb', 'stockpile', 'groundPickup'];
+const FIELDS = ['drivetrain', 'shooter', 'maxClimb', 'canPass', 'groundPickup'];
 const BUILT_IN = [
   { f: 'drivetrain', label: 'Drivetrain', opts: ['swerve', 'tank', 'mecanum', 'other'] },
-  { f: 'shooter', label: 'How do they shoot?', opts: ['drum', 'flywheel', 'dump', 'none'] },
+  { f: 'shooter', label: 'How do they shoot?', opts: ['drum', 'turret', 'static', 'other', 'none'] },
   { f: 'maxClimb', label: 'Highest tower level they claim', opts: ['L3', 'L2', 'L1', 'none'] },
-  { f: 'stockpile', label: 'Can they hold fuel through an inactive shift?', opts: ['yes', 'some', 'no'],
-    hint: 'The defining REBUILT skill — nothing public measures it.' },
+  { f: 'canPass', label: 'Can they pass?', opts: ['yes', 'no'] },
   { f: 'groundPickup', label: 'Ground pickup?', opts: ['yes', 'no'] },
 ];
 

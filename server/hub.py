@@ -2319,14 +2319,14 @@ def _csv_table(h, ek, table):
         # The team's own questions follow the built-in ones, a column each,
         # headed by the question as it is worded now.
         extra = [q for q in (h.store.get("pitQuestions") or []) if isinstance(q, dict)]
-        header = ["team", "scoutId", "drivetrain", "shooter", "maxClimb", "stockpile",
+        header = ["team", "scoutId", "drivetrain", "shooter", "maxClimb", "canPass",
                   "groundPickup", "weight", "autos", "notes", "photos"] + [q["label"] for q in extra]
         rows = []
         for e in sorted(h.store.pit_entries(ek), key=lambda x: x["team"]):
             p = e.get("payload") or {}
             custom = p.get("custom") if isinstance(p.get("custom"), dict) else {}
             rows.append([e["team"], e.get("scoutId"), p.get("drivetrain"), p.get("shooter"),
-                         p.get("maxClimb"), p.get("stockpile"), p.get("groundPickup"),
+                         p.get("maxClimb"), p.get("canPass"), p.get("groundPickup"),
                          p.get("weight"), p.get("autos"), p.get("notes"),
                          len(p.get("photos") or [])] + [custom.get(q["id"]) for q in extra])
         return header, rows
