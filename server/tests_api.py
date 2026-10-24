@@ -2924,6 +2924,94 @@ def test_nobody_elses_format_can_raise(L):
     return ok
 
 
+def test_cloud_mode_is_behind_the_team_passcode(L):
+    """A hub on the internet: the proxy is the way in, and the passcode is the fence.
+
+    Behind a proxy on the same machine every visitor's socket is loopback, so
+    `_is_local` would have handed the whole internet the settings and the API
+    keys. A forwarded request is never local, and nothing but the passcode page
+    is served to a device that has not typed the team passcode.
+    """
+    ok = True
+    H = hub.Handler
+    saved = (H.behind_proxy, H.team_passcode, H.allow_remote_config)
+    admin_before = os.environ.get(envfile.ADMIN)
+    H.behind_proxy, H.team_passcode, H.allow_remote_config = True, "6059", False
+    H._team_fails.clear()
+    os.environ[envfile.ADMIN] = envfile.encode("the-admin-one")
+    fwd = {"X-Forwarded-For": "203.0.113.7", "Host": "scout.example.org"}
+
+    def get(path, headers=None):
+        r = urllib.request.Request(f"http://127.0.0.1:{L.port}{path}", headers=headers or {})
+        try:
+            with urllib.request.urlopen(r, timeout=10) as res:
+                return res.status, res.headers, res.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers, e.read().decode("utf-8", "replace")
+
+    def unlock(pin, ip="203.0.113.7"):
+        r = urllib.request.Request(f"http://127.0.0.1:{L.port}/api/team/unlock",
+                                   data=json.dumps({"pin": pin}).encode(), method="POST",
+                                   headers={"Content-Type": "application/json",
+                                            "X-Forwarded-For": ip})
+        try:
+            with urllib.request.urlopen(r, timeout=10) as res:
+                return res.status, res.headers.get("Set-Cookie") or ""
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers.get("Set-Cookie") or ""
+
+    try:
+        code, _, body = get("/api/state", fwd)
+        ok &= check("an API read from outside is refused without the passcode",
+                    code == 401 and "teamLocked" in body, f"({code})")
+        code, _, body = get("/scout", fwd)
+        ok &= check("a page from outside is the passcode page instead",
+                    code == 200 and "/api/team/unlock" in body, f"({code})")
+        code, _, _ = get("/css/theme.css", fwd)
+        ok &= check("what that page is drawn with is not gated", code == 200, f"({code})")
+        code, _ = L.req("/api/sync", {"scout": [entry(f"{EK}_qm1", 101, "ZZ", 1)]},
+                        headers=fwd)
+        ok &= check("and nobody outside can write a scouting row", code == 401, f"({code})")
+
+        code, cookie = unlock("1234")
+        ok &= check("a wrong passcode is refused and sets nothing",
+                    code == 403 and not cookie, f"({code})")
+        code, cookie = unlock("6059")
+        ok &= check("the right one sets a long-lived, script-proof, https-only cookie",
+                    code == 200 and "HttpOnly" in cookie and "Secure" in cookie
+                    and "SameSite=Lax" in cookie, f"({code} {cookie[:60]})")
+        jar = {**fwd, "Cookie": cookie.split(";")[0]}
+        code, _, _ = get("/api/state", jar)
+        ok &= check("and with it the hub answers", code == 200, f"({code})")
+        code, _, body = get("/api/config", jar)
+        ok &= check("but a visitor through the proxy is never the hub machine",
+                    code == 200 and json.loads(body).get("setup") is None)
+        code, _, body = get("/api/discover", jar)
+        ok &= check("the join QR is the public address, not a private one",
+                    json.loads(body).get("urls") == ["https://scout.example.org"], body[:80])
+
+        code, cookie = unlock("the-admin-one", ip="203.0.113.8")
+        ok &= check("the admin password opens the door too", code == 200 and bool(cookie),
+                    f"({code})")
+
+        H._team_fails["203.0.113.9"] = [time.time()] * H.TEAM_TRIES
+        code, _ = unlock("6059", ip="203.0.113.9")
+        ok &= check("an address that keeps guessing is held off, right passcode or not",
+                    code == 429, f"({code})")
+
+        code, _, _ = get("/api/state")
+        ok &= check("a request with no proxy header (an SSH tunnel) is the hub machine",
+                    code == 200, f"({code})")
+    finally:
+        H.behind_proxy, H.team_passcode, H.allow_remote_config = saved
+        H._team_fails.clear()
+        if admin_before is None:
+            os.environ.pop(envfile.ADMIN, None)
+        else:
+            os.environ[envfile.ADMIN] = admin_before
+    return ok
+
+
 def main():
     L = Live()
     try:
@@ -2963,7 +3051,8 @@ def main():
                    test_junk_in_every_answer_field,
                    test_the_webhook_is_shut_without_a_token,
                    test_a_refused_body_does_not_eat_the_next_request,
-                   test_nobody_elses_format_can_raise):
+                   test_nobody_elses_format_can_raise,
+                   test_cloud_mode_is_behind_the_team_passcode):
             print(f"\n{fn.__name__.replace('test_', '').replace('_', ' ')}")
             passed &= fn(L)
         print()

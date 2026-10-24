@@ -1,0 +1,48 @@
+# systemd unit for running the hub itself in the cloud (setup.md, Part C).
+#
+#   sudo cp server/deploy/frc-hub.service /etc/systemd/system/
+#   sudo systemctl edit frc-hub        # HUB_TEAM_PASSCODE goes in the override
+#   sudo systemctl enable --now frc-hub
+#
+# The API keys and the admin password live in /var/lib/frc-hub/.env, beside
+# the database, not in the checkout: `git pull` updates the code and never
+# touches either. The team passcode goes in the override, never in this file -
+# this repository is public.
+
+[Unit]
+Description=REBUILT scouting hub (cloud)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=frchub
+Group=frchub
+WorkingDirectory=/opt/frc-scouting
+# Loopback only: Caddy on this machine is the way in, and --behind-proxy is
+# what stops everything it forwards from counting as "the hub machine".
+ExecStart=/usr/bin/python3 /opt/frc-scouting/server/hub.py --bind 127.0.0.1 --behind-proxy --allow-remote-config --no-mdns --no-browser --db /var/lib/frc-hub/scouting.db
+Environment=HUB_ENV_FILE=/var/lib/frc-hub/.env
+
+# systemctl edit frc-hub, then:
+#   [Service]
+#   Environment=HUB_TEAM_PASSCODE=...
+
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=frc-hub
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/frc-hub
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

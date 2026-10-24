@@ -1,0 +1,27 @@
+# TLS for the cloud hub. Add this block to /etc/caddy/Caddyfile beside the
+# mirror's, then `sudo caddy validate --config /etc/caddy/Caddyfile` and
+# `sudo systemctl reload caddy`.
+#
+# The sslip.io name resolves to the IP written inside it, so the hub is
+# reachable the moment this is loaded; the systemoverload.org one starts
+# working once Wix has an A record for `hub` pointing at this machine.
+
+hub.systemoverload.org, hub.141-148-162-105.sslip.io {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# A pit record carries base64 photos; the hub's own limit is 64MB.
+	request_body {
+		max_size 64MB
+	}
+
+	# flush_interval -1: /api/stream is server-sent events, and the match
+	# clock on six phones rides on it arriving now, not when a buffer fills.
+	reverse_proxy 127.0.0.1:6059 {
+		flush_interval -1
+	}
+}

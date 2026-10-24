@@ -30,8 +30,10 @@ import tempfile
 import threading
 
 #: Where the hub looks: the repository root, one level up from `server/`.
+#: HUB_ENV_FILE moves it - a cloud hub keeps its keys beside its database,
+#: out of the code checkout that `git pull` updates.
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PATH = os.path.join(ROOT, ".env")
+PATH = os.environ.get("HUB_ENV_FILE") or os.path.join(ROOT, ".env")
 
 #: The admin password, base64 of the UTF-8 password.  One name, so there is no
 #: second place to look when it does not work.

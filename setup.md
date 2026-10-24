@@ -451,6 +451,42 @@ overwrite the event.
 
 ---
 
+## Part C — the hub itself in the cloud
+
+Optional, instead of the laptop. The hub runs on the same host as the mirror, so nothing at the
+venue has to stay switched on. The cost: **every scout's phone needs mobile data**. Phones keep
+recording with no signal and send everything when it comes back, but the live numbers wait for it.
+
+On the internet there is no venue wifi acting as the fence, so cloud mode adds one:
+
+- **Team passcode** (`HUB_TEAM_PASSCODE`). Every page asks for it once per device, then
+  remembers it for 30 days. Ten wrong tries from one address locks that address out for ten
+  minutes.
+- **Admin password**. Typed at that same prompt, it also opens the hub. The admin panel then
+  asks for it again before any setting can be changed.
+- Anything the proxy forwards never counts as "the hub machine". To reach the hub *as* the hub
+  machine, open an SSH tunnel, `ssh -L 6059:127.0.0.1:6059 ubuntu@<host>`, and open
+  `http://localhost:6059/`.
+
+On the host, with the mirror's checkout already at `/opt/frc-scouting`:
+
+```
+sudo useradd --system --home /opt/frc-scouting --shell /usr/sbin/nologin frchub
+sudo cp /opt/frc-scouting/server/deploy/frc-hub.service /etc/systemd/system/
+sudo systemctl edit frc-hub      # [Service] / Environment=HUB_TEAM_PASSCODE=...
+sudo systemctl start frc-hub     # creates /var/lib/frc-hub
+```
+
+Copy the laptop's `.env` to `/var/lib/frc-hub/.env`, owned by `frchub` and mode `600`. Add an
+`ADMIN_PASSWORD_B64=` line holding the base64 of the admin password. Without an admin password,
+cloud mode refuses to start. Then `sudo systemctl enable --now frc-hub`, add the block from
+[server/deploy/Caddyfile](server/deploy/Caddyfile) to `/etc/caddy/Caddyfile`, and reload Caddy.
+To bring an event over, stop the laptop hub, copy its `data/scouting.db` to
+`/var/lib/frc-hub/scouting.db` before the first start, and leave the laptop hub off from then on.
+Two hubs pushing to one mirror overwrite each other.
+
+---
+
 ## Trying the mirror on a laptop first
 
 No host, no systemd, five minutes, two terminal windows:

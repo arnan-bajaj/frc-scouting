@@ -2682,6 +2682,16 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "FRCScout/1.0"
     hub = None
     allow_remote_config = False
+    #: Cloud mode (see `--behind-proxy`): the hub sits behind a TLS proxy on
+    #: the same machine, so the socket address of every visitor is loopback
+    #: and cannot be what decides who is "at the hub".
+    behind_proxy = False
+    #: The passcode every visitor types before anything else is served, when
+    #: the hub is on the internet rather than on venue wifi. Empty: no gate.
+    team_passcode = ""
+    #: Failed team-passcode attempts per client address, for the throttle.
+    _team_fails = {}
+    _team_fails_lock = threading.Lock()
 
     def log_message(self, fmt, *args):
         if os.environ.get("SCOUT_VERBOSE"):
@@ -2718,7 +2728,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         return True
 
-    def _json(self, obj, code=200, etag=None):
+    def _json(self, obj, code=200, etag=None, headers=None):
         # allow_nan=False so this can never emit bare NaN or Infinity. Python
         # writes those happily and reads them back; the browser's JSON.parse
         # rejects them outright, so one non-finite number anywhere in a response
@@ -2747,6 +2757,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
         else:
             self.send_header("Cache-Control", "no-store")
+        for k, v in (headers or {}).items():
+            self.send_header(k, v)
         self.end_headers()
         self.wfile.write(body)
 
@@ -2827,7 +2839,102 @@ class Handler(BaseHTTPRequestHandler):
         should be configuring it, and it needs no passcode to enforce.
         """
         host = (self.client_address or ("",))[0]
-        return host in ("127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost")
+        if host not in ("127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost"):
+            return False
+        # Behind a proxy on this machine, everyone on the internet arrives from
+        # loopback. The proxy always adds X-Forwarded-For and a visitor cannot
+        # take it off, so a request carrying one came through it - from
+        # outside. Only an SSH tunnel or a shell on the box reaches the hub
+        # without one.
+        if Handler.behind_proxy and self.headers.get("X-Forwarded-For"):
+            return False
+        return True
+
+    def _client_ip(self):
+        """Who is asking, for the passcode throttle.
+
+        The proxy appends the address it saw to X-Forwarded-For, so the last
+        entry is the one a visitor cannot forge.
+        """
+        fwd = self.headers.get("X-Forwarded-For") if Handler.behind_proxy else None
+        if fwd:
+            return fwd.split(",")[-1].strip()
+        return (self.client_address or ("",))[0]
+
+    # ------------------------------------------------------- team gate
+    #
+    # On venue wifi the network is the fence. On the internet there is none, so
+    # a hub started with HUB_TEAM_PASSCODE answers nothing but this page until
+    # the passcode has been typed once on that device. A cookie carries it from
+    # then on - every fetch, the event stream and every photo <img> send it
+    # without any page having to know - and it lasts the whole event, because a
+    # scout locked out mid-quals is the worst outcome this hub has.
+
+    TEAM_COOKIE = "frc_team"
+    TEAM_DAYS = 30
+    TEAM_TRIES = 10              # wrong passcodes per address...
+    TEAM_WINDOW = 600            # ...per ten minutes
+    #: What the passcode page itself is drawn with, plus Nexus, which carries
+    #: its own token.
+    TEAM_OPEN = ("/api/team/unlock", "/api/nexus/webhook", "/manifest.webmanifest")
+    TEAM_OPEN_DIRS = ("/css/", "/js/", "/fonts/", "/icons/")
+
+    def _cookie(self, name):
+        for part in (self.headers.get("Cookie") or "").split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == name:
+                return v
+        return None
+
+    def _team_ok(self):
+        if not Handler.team_passcode or self._is_local():
+            return True
+        return Handler.hub._token_ok("teamTokens", self._cookie(self.TEAM_COOKIE))
+
+    def _team_gate(self, p):
+        """True when this request was answered with "passcode first" instead."""
+        if self._team_ok() or p in self.TEAM_OPEN or p.startswith(self.TEAM_OPEN_DIRS):
+            return False
+        if p.startswith("/api/"):
+            self._json({"error": "Team passcode required.", "teamLocked": True}, 401)
+        else:
+            self._file("team_gate.html")
+        return True
+
+    def _team_throttled(self, who):
+        now = time.time()
+        with Handler._team_fails_lock:
+            recent = [t for t in Handler._team_fails.get(who, ()) if now - t < self.TEAM_WINDOW]
+            Handler._team_fails[who] = recent
+            return len(recent) >= self.TEAM_TRIES
+
+    def _team_failed(self, who):
+        with Handler._team_fails_lock:
+            Handler._team_fails.setdefault(who, []).append(time.time())
+
+    def _team_unlock(self, body):
+        if not Handler.team_passcode:
+            return self._json({"ok": True})
+        who = self._client_ip()
+        if self._team_throttled(who):
+            return self._json({"ok": False,
+                               "error": "Too many wrong tries. Wait ten minutes."}, 429)
+        code = str(body.get("pin") or "").strip()
+        # The admin password opens the door too: whoever can change the hub
+        # can certainly look at it, and that is one fewer thing for a lead to type.
+        admin, problem = Handler.hub.admin_password()
+        if not (hmac.compare_digest(code.encode(), Handler.team_passcode.encode())
+                or (admin and not problem
+                    and hmac.compare_digest(code.encode(), admin.strip().encode()))):
+            self._team_failed(who)
+            time.sleep(0.6)                      # blunt the guessing rate
+            return self._json({"ok": False, "error": "That is not the passcode."}, 403)
+        tok = Handler.hub._issue("teamTokens", self.TEAM_DAYS * 86400)
+        cookie = "%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax" % (
+            self.TEAM_COOKIE, tok, self.TEAM_DAYS * 86400)
+        if Handler.behind_proxy:
+            cookie += "; Secure"
+        return self._json({"ok": True}, headers={"Set-Cookie": cookie})
 
     def _unlocked(self):
         return Handler.hub.token_ok(self.headers.get("X-Strategy-Token"))
@@ -2983,6 +3090,8 @@ class Handler(BaseHTTPRequestHandler):
         p = posixpath.normpath(u.path)
         q = parse_qs(u.query)
         h = Handler.hub
+        if self._team_gate(p):
+            return None
 
         if p in ("/", "/index.html"):
             if not (self._is_local() or Handler.allow_remote_config):
@@ -3187,6 +3296,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(h.find_events((q.get("team") or [""])[0],
                                             (q.get("year") or [None])[0]))
         if p == "/api/discover":
+            # Behind a proxy the machine's own addresses are private ones no
+            # phone can reach; the address this page was loaded from is the one.
+            host = self.headers.get("Host") or ""
+            if Handler.behind_proxy and re.fullmatch(r"[A-Za-z0-9.-]+(:\d+)?", host):
+                return self._json({"urls": ["https://" + host]})
             return self._json({"urls": discover.urls(self.server.server_address[1])})
         return self._file(p)
 
@@ -3196,6 +3310,10 @@ class Handler(BaseHTTPRequestHandler):
         p = posixpath.normpath(u.path)
         h = Handler.hub
         body = self._body()
+        if p == "/api/team/unlock":
+            return self._team_unlock(body)
+        if self._team_gate(p):
+            return None
 
         if p == "/api/config":
             if not (self._is_local() or Handler.allow_remote_config):
@@ -3837,6 +3955,14 @@ def main():
                     help="type a new admin password and write it into .env, then carry on "
                          "serving. This is the only way it is set, and the way back in when "
                          "nobody can remember it")
+    ap.add_argument("--bind", default=os.environ.get("HUB_BIND") or "0.0.0.0",
+                    help="address to listen on (default 0.0.0.0, every interface). "
+                         "127.0.0.1 when a proxy on this machine is the way in")
+    ap.add_argument("--behind-proxy", action="store_true",
+                    default=bool(os.environ.get("HUB_BEHIND_PROXY")),
+                    help="cloud mode: a TLS proxy on this machine forwards the internet "
+                         "here. Requests it forwards are never treated as the hub machine, "
+                         "and HUB_TEAM_PASSCODE gates every page")
     args = ap.parse_args()
 
     if args.set_admin_password and not _set_admin_password():
@@ -3850,6 +3976,26 @@ def main():
     store.set("adminTokens", {})
     Handler.hub = hub
     Handler.allow_remote_config = args.allow_remote_config
+    Handler.behind_proxy = args.behind_proxy
+    # From the environment only, like the mirror's secrets: an argument is
+    # visible in `ps` to every user on the machine.
+    Handler.team_passcode = (os.environ.get("HUB_TEAM_PASSCODE") or "").strip()
+    if args.behind_proxy:
+        # On the internet, an ungated hub is a hub anyone can scout for and
+        # anyone can read, and remote config with no admin password is a hub
+        # anyone can re-point. Refuse rather than serve either.
+        if not Handler.team_passcode:
+            sys.exit("--behind-proxy needs HUB_TEAM_PASSCODE set: without it every page "
+                     "and every write is open to the whole internet.")
+        if args.allow_remote_config and not envfile.admin_password()[0]:
+            sys.exit("--behind-proxy with --allow-remote-config needs an admin password "
+                     "(python3 server/hub.py --set-admin-password): without one anybody "
+                     "on the internet could change this hub's settings.")
+    # A changed passcode has to lock out the devices that knew the old one.
+    tag = hashlib.sha256(("team:" + Handler.team_passcode).encode()).hexdigest()
+    if store.get("teamPasscodeTag") != tag:
+        store.set("teamPasscodeTag", tag)
+        store.set("teamTokens", {})
 
     hub.port = args.port
     hub.note("info", f"hub started on port {args.port}")
@@ -3866,7 +4012,7 @@ def main():
         hub.reconcile()
     except Exception as e:
         sys.stderr.write(f"[reconcile] {e}\n")
-    srv = Server(("0.0.0.0", args.port), Handler)
+    srv = Server((args.bind, args.port), Handler)
     # Serving a database somebody built offline is a real mode, not just a test
     # one: Statbotics needs no key, so a hub with no event on the internet still
     # asks about one, and gets a truthful "nothing" back that overwrites what is
