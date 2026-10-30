@@ -1,6 +1,6 @@
-# REBUILT Scouting — FRC 2026
+# Sentinel Scout — FRC 2026
 
-Scouting for **REBUILT presented by Haas**, built for FRC Team 6059.
+Sentinel Scout is scouting for **REBUILT presented by Haas**, built for FRC Team 6059.
 
 One laptop runs the whole thing. Scouts open a web page on their phones — nothing to install,
 no app store. A strategy dashboard runs on any other laptop or tablet on the same network.
@@ -61,7 +61,7 @@ somewhere you will find again — the Desktop is fine.
 A black window appears and prints something like this:
 
 ```
-  FRC 2026 REBUILT scouting server
+  Sentinel Scout - FRC 2026 REBUILT
   ----------------------------------------------------
     http://192.168.1.120:6059  <- try this first
 

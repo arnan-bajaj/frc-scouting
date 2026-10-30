@@ -1,4 +1,4 @@
-# FRC Scouting UI — Implementation Handoff
+# Sentinel Scout UI — Implementation Handoff
 
 > **Superseded for look and feel.** The app has since moved to a softer design: sentence-case
 > labels, no outlines, pill-shaped controls, a light theme beside the dark one, and a simple

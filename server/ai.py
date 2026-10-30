@@ -255,7 +255,7 @@ class Client:
                     {"Authorization": "Bearer " + self.key,
                      # What OpenRouter shows beside the spend on their own
                      # dashboard. It names the app, never the team or the event.
-                     "X-Title": "FRC Scouting Hub",
+                     "X-Title": "Sentinel Scout",
                      "content-type": "application/json"}, payload)
 
         payload = {"systemInstruction": {"parts": [{"text": system}]},

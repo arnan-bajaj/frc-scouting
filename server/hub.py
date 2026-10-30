@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FRC 2026 REBUILT scouting server.
+"""Sentinel Scout: the FRC 2026 REBUILT scouting server.
 
 Python 3 standard library only - no pip install, nothing to build.  Runs the
 same on macOS (testing) and Windows (competition).
@@ -3966,7 +3966,7 @@ def main():
     # must never quietly override the machine.
     from_file = envfile.load()
 
-    ap = argparse.ArgumentParser(description="FRC 2026 REBUILT scouting server")
+    ap = argparse.ArgumentParser(description="Sentinel Scout: FRC 2026 REBUILT scouting server")
     ap.add_argument("--port", type=int, default=PORT)
     ap.add_argument("--db", default=None)
     ap.add_argument("--no-mdns", action="store_true")

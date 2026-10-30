@@ -1,6 +1,6 @@
 {
   "id": "/tutorial",
-  "name": "REBUILT Scouting Practice",
+  "name": "Sentinel Scout Practice",
   "short_name": "Practice",
   "description": "Practise FRC 2026 REBUILT match scouting. Nothing is saved.",
   "start_url": "/tutorial",
@@ -10,7 +10,7 @@
   "background_color": "#1a1a1e",
   "theme_color": "#1a1a1e",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "/icons/sentinel-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/sentinel-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }

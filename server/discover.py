@@ -108,7 +108,7 @@ def urls(port, max_age=_URLS_TTL):
 
 def banner(port):
     lines = [""]
-    lines.append("  FRC 2026 REBUILT scouting server")
+    lines.append("  Sentinel Scout - FRC 2026 REBUILT")
     lines.append("  " + "-" * 52)
     us = urls(port)
     if not us:

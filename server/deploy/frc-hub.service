@@ -10,7 +10,7 @@
 # this repository is public.
 
 [Unit]
-Description=REBUILT scouting hub (cloud)
+Description=Sentinel Scout hub (cloud)
 After=network-online.target
 Wants=network-online.target
 

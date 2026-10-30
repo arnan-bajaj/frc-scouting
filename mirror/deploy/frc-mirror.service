@@ -9,7 +9,7 @@
 # on the host, and this file is in a public git repository.
 
 [Unit]
-Description=REBUILT scouting off-site mirror
+Description=Sentinel Scout off-site mirror
 After=network-online.target
 Wants=network-online.target
 

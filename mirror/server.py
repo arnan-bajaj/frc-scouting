@@ -811,7 +811,7 @@ def main():
     if envfile:
         envfile.load()
     ap = argparse.ArgumentParser(
-        description="Off-site mirror for the REBUILT scouting hub")
+        description="Off-site mirror for the Sentinel Scout hub")
     ap.add_argument("--port", type=int, default=int(os.environ.get("MIRROR_PORT") or PORT))
     ap.add_argument("--bind", default=os.environ.get("MIRROR_BIND") or "127.0.0.1",
                     help="default 127.0.0.1: this is meant to sit behind a TLS proxy. "
@@ -842,7 +842,7 @@ def main():
 
     srv = Server((args.bind, args.port), Handler)
     evs = store.events()
-    print("  REBUILT scouting mirror")
+    print("  Sentinel Scout mirror")
     print("  ----------------------------------------------------")
     print("    listening on   http://%s:%d" % (args.bind, args.port))
     print("    database       %s" % store.path)
